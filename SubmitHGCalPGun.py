@@ -54,6 +54,7 @@ def createParser():
     parser.add_option('', '--addGenOrigin',    action='store_true', dest='ADDGENORIG',  default=False, help='add coordinates of the origin vertex for gen particles as well as the mother particle index')
     parser.add_option('', '--addGenExtrapol',  action='store_true', dest='ADDGENEXTR',  default=False, help='add coordinates for the position of each gen particle extrapolated to the first HGCal layer (takes into account magnetic field)')
     parser.add_option('', '--storePFCandidates',  action='store_true', dest='storePFCandidates',  default=False, help='store PFCandidates collection')
+    parser.add_option('', '--storeMCParticles',  action='store_true', dest='storeMCParticles',  default=False, help='store MC generated particle')
     parser.add_option('', '--multiClusterTag',  action='store', dest='MULTICLUSTAG', default="hgcalMultiClusters", help='name of HGCalMultiCluster InputTag - use hgcalLayerClusters before CMSSW_10_3_X')
     parser.add_option('', '--keepDQMfile',  action='store_true', dest='DQM',  default=False, help='store the DQM file in relevant folder locally or in EOS, default is False.')
 
@@ -421,6 +422,7 @@ def submitHGCalProduction(*args, **kwargs):
             s_template=s_template.replace('DUMMYSGO',str(opt.ADDGENORIG))
             s_template=s_template.replace('DUMMYSGE',str(opt.ADDGENEXTR))
             s_template=s_template.replace('DUMMYSPFC',str(opt.storePFCandidates))
+            s_template=s_template.replace('DUMMYSMC',str(opt.storeMCParticles))
             s_template=s_template.replace('DUMMYMULCLUSTAG', str(opt.MULTICLUSTAG))
 
         if (opt.DTIER == 'ALL'):
@@ -448,6 +450,7 @@ def submitHGCalProduction(*args, **kwargs):
             sn_template=sn_template.replace('DUMMYSGO',str(opt.ADDGENORIG))
             sn_template=sn_template.replace('DUMMYSGE',str(opt.ADDGENEXTR))
             sn_template=sn_template.replace('DUMMYSPFC',str(opt.storePFCandidates))
+            sn_template=sn_template.replace('DUMMYSMC',str(opt.storeMCParticles))
             sn_template=sn_template.replace('DUMMYMULCLUSTAG', str(opt.MULTICLUSTAG))
             
 
