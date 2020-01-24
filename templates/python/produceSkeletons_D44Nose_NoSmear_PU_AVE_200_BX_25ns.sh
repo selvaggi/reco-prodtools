@@ -60,7 +60,7 @@ action() {
   cmsDriver.py TTbar_14TeV_TuneCUETP8M1_cfi \
     --conditions auto:phase2_realistic_T14 \
     -n 10 \
-    --era Phase2C6_timing_layer_bar \
+    --era Phase2C6 \
     --eventcontent FEVTDEBUGHLT \
     -s GEN,SIM,DIGI:pdigi_valid,L1,L1TrackTrigger,DIGI2RAW,HLT:@fake2 \
     --datatier GEN-SIM \
@@ -74,7 +74,7 @@ action() {
   cmsDriver.py step3 \
     --conditions auto:phase2_realistic_T14 \
     -n 10 \
-    --era Phase2C6_timing_layer_bar \
+    --era Phase2C6 \
     --eventcontent FEVTDEBUGHLT,DQM \
     --runUnscheduled \
     -s RAW2DIGI,L1Reco,RECO,RECOSIM,VALIDATION:@phase2Validation,DQM:@phase2 \
@@ -100,7 +100,7 @@ action() {
   cmsDriver.py step3 \
     --conditions auto:phase2_realistic_T14 \
     -n 10 \
-    --era Phase2C6_timing_layer_bar \
+    --era Phase2C6 \
     --eventcontent FEVTDEBUGHLT \
     --runUnscheduled \
     -s RAW2DIGI,L1Reco,RECO,RECOSIM \
