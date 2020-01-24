@@ -38,6 +38,7 @@ def createParser():
     parser.add_option('', '--gunMode',   dest='gunMode',   type='string', default='default',    help='default, pythia8, physproc or closeby')
     parser.add_option('', '--gunType',   dest='gunType',   type='string', default='Pt',    help='Pt or E gun, or in case of gunType physproc details on the physics process')
     parser.add_option('', '--InConeID', dest='InConeID',   type='string',     default='', help='PDG ID for single particle to be generated in the cone (supported as PARTID), default is empty string (none)')
+    parser.add_option('', '--NPU', dest='NPU',   type='string',     default='', help='Number of pile-up interactions to be simulated. Default takes whatever is already defined in the template ')
     parser.add_option('', '--MinDeltaR',  dest='MinDeltaR',  type=float, default=0.3, help='min. DR value')
     parser.add_option('', '--MaxDeltaR',  dest='MaxDeltaR',  type=float, default=0.4, help='max. DR value')
     parser.add_option('', '--Delta',  dest='Delta',  type=float, default=0.25, help=' arc-distance between two consecutive vertices over the circle of radius R')
@@ -54,7 +55,7 @@ def createParser():
     parser.add_option('', '--addGenOrigin',    action='store_true', dest='ADDGENORIG',  default=False, help='add coordinates of the origin vertex for gen particles as well as the mother particle index')
     parser.add_option('', '--addGenExtrapol',  action='store_true', dest='ADDGENEXTR',  default=False, help='add coordinates for the position of each gen particle extrapolated to the first HGCal layer (takes into account magnetic field)')
     parser.add_option('', '--storePFCandidates',  action='store_true', dest='storePFCandidates',  default=False, help='store PFCandidates collection')
-    parser.add_option('', '--storeMCParticles',  action='store_true', dest='storeMCParticles',  default=False, help='store MC generated particle')
+    parser.add_option('', '--storeMCParticles',  action='store_true', dest='storeMCParticles',  default=False, help='store MC generated particles')
     parser.add_option('', '--multiClusterTag',  action='store', dest='MULTICLUSTAG', default="hgcalMultiClusters", help='name of HGCalMultiCluster InputTag - use hgcalLayerClusters before CMSSW_10_3_X')
     parser.add_option('', '--keepDQMfile',  action='store_true', dest='DQM',  default=False, help='store the DQM file in relevant folder locally or in EOS, default is False.')
 
@@ -237,6 +238,14 @@ def submitHGCalProduction(*args, **kwargs):
         InConeSECTION=InConeSECTION.replace('DUMMYMinMomRatio', str(opt.MinMomRatio))
         InConeSECTION=InConeSECTION.replace('DUMMYMaxMomRatio', str(opt.MaxMomRatio))
 
+    if opt.NPU != '':
+        # define as well the template to be added
+        PUSECTION="""
+## check that the template was properly configured as a pile-up run, and overwrite PU number if so
+if hasattr(process.mix, 'input'):
+    process.mix.input.nbPileupEvents.averageNumber = cms.double(PUVALUE)
+        """
+        PUSECTION=PUSECTION.replace('PUVALUE',opt.NPU)
 
     # previous data tier
     previousDataTier = ''
@@ -383,6 +392,8 @@ def submitHGCalProduction(*args, **kwargs):
             # in case of InCone generation of particles
             if opt.InConeID != '':
                 s_template=s_template.replace('#DUMMYINCONESECTION',InConeSECTION)
+            if opt.NPU != '':
+                s_template=s_template.replace('#DUMMYPUSECTION',PUSECTION)
 
             # prepare GEN-SIM-DIGI inputs
             nParticles = ','.join([opt.PARTID for i in range(0,opt.NPART)])
@@ -452,8 +463,6 @@ def submitHGCalProduction(*args, **kwargs):
             sn_template=sn_template.replace('DUMMYSPFC',str(opt.storePFCandidates))
             sn_template=sn_template.replace('DUMMYSMC',str(opt.storeMCParticles))
             sn_template=sn_template.replace('DUMMYMULCLUSTAG', str(opt.MULTICLUSTAG))
-            
-
 
         # submit job
         # now write the file from the s_template
