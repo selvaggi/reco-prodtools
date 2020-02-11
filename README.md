@@ -176,7 +176,7 @@ in the energy range from `EMIN` to `EMAX` (Pt option not available), radius rang
   --tag MYTAG
 ```
 
-### Physics processes
+### Physics processes (via Pythia8 configuration)
 
 The physics processes listed [above](#available-guns-and-processes) can be generated as follows using `gunMode` set to `physproc` and the `gunType` to the process of your choice:
 
@@ -203,6 +203,15 @@ A more efficient way to apply phase space cuts is to directly configure Pythia8 
 
 * `PhaseSpace:pTHatMin`: set via `--thresholdMin`, ignored when negative.
 * `PhaseSpace:pTHatMax`: set via `--thresholdMax`, ignored when negative.
+
+
+### Physics process (via gridpack)
+
+You can generate physics processes using gridpacks by specifying the following option:
+
+```shell
+  --gunMode gridpack --gptarball /path/to/gridpack_tarball.tar.xz
+```
 
 ### RECO step
 
