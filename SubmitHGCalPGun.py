@@ -35,10 +35,11 @@ def createParser():
     parser.add_option('', '--overlapping',  action='store_true',  dest='overlapping',  default=False,    help='particles will be generated in window [phiMin,phiMax], [rMin,rMax] (true) or with a DeltaPhi=Delta/R (default false) in case of closeby gun')
     parser.add_option('', '--randomShoot',  action='store_true',  dest='randomShoot',  default=False,    help='if true it will randomly choose one particle in the range [1, NParticles +1 ]')
     parser.add_option('', '--nRandomPart',  dest='NRANDOMPART',  type=int,   default=1,      help='This is used together with randomShoot to shoot randomly [1, NParticles +1 ] particles, default is 1')
-    parser.add_option('', '--gunMode',   dest='gunMode',   type='string', default='default',    help='default, pythia8, physproc or closeby')
-    parser.add_option('', '--gunType',   dest='gunType',   type='string', default='Pt',    help='Pt or E gun, or in case of gunType physproc details on the physics process')
+    parser.add_option('', '--gunMode',   dest='gunMode',   type='string', default='default',    help='default, pythia8, physproc, gridpack or closeby')
+    parser.add_option('', '--gunType',   dest='gunType',   type='string', default='Pt',    help='Pt or E gun (gunMode = default, pythia8), physics process details (gunMode = physproc)')
     parser.add_option('', '--InConeID', dest='InConeID',   type='string',     default='', help='PDG ID for single particle to be generated in the cone (supported as PARTID), default is empty string (none)')
     parser.add_option('', '--NPU', dest='NPU',   type='string',     default='', help='Number of pile-up interactions to be simulated. Default takes whatever is already defined in the template ')
+    parser.add_option('', '--gptarball', dest='gptarball',   type='string',     default='', help='Directory that contains LHE files. Will be used only if gunMode = gridpack. One job per file will be launched. ')
     parser.add_option('', '--MinDeltaR',  dest='MinDeltaR',  type=float, default=0.3, help='min. DR value')
     parser.add_option('', '--MaxDeltaR',  dest='MaxDeltaR',  type=float, default=0.4, help='max. DR value')
     parser.add_option('', '--Delta',  dest='Delta',  type=float, default=0.25, help=' arc-distance between two consecutive vertices over the circle of radius R')
@@ -80,7 +81,7 @@ def parseOptions(parser=None, opt=None):
         print 'ERROR: CMSSW does not seem to be set up. Exiting...'
         sys.exit()
 
-    partGunModes = ['default', 'pythia8', 'closeby', 'physproc']
+    partGunModes = ['default', 'pythia8', 'closeby', 'physproc', 'gridpack']
     if opt.gunMode not in partGunModes:
         parser.error('Particle gun mode ' + opt.gunMode + ' is not supported. Exiting...')
         sys.exit()
@@ -157,6 +158,8 @@ def printSetup(opt, CMSSW_BASE, CMSSW_VERSION, SCRAM_ARCH, currentDir, outDir):
         curr_input= opt.RELVAL
     if opt.gunMode == 'physproc':
         print 'INPUTS:     ', [curr_input, 'Physics process config: ' + ' '.join(opt.gunMode.split(':')),opt.RELVAL][int(opt.DTIER=='GSD')]
+    elif opt.gunMode == 'gridpack':
+        print 'INPUTS:     Physics process (from gridpack) from input directory: ' + opt.gptarball
     else:
         print 'INPUTS:     ', [curr_input, 'Particle gun mode: ' + opt.gunMode + ', type: ' + opt.gunType + ', PDG ID(s) '+str(opt.PARTID)+', '+str(opt.NPART)+' times per event, ' + opt.gunType + ' threshold in ['+str(opt.thresholdMin)+','+str(opt.thresholdMax)+'], eta threshold in ['+str(opt.etaMin)+','+str(opt.etaMax)+']',opt.RELVAL][int(opt.DTIER=='GSD')]
     if (opt.InConeID!='' and opt.DTIER=='GSD'):
@@ -216,7 +219,6 @@ def submitHGCalProduction(*args, **kwargs):
     DASquery=False
     if opt.RELVAL != '':
         DASquery=True
-
 
     # in case of InCone generation of particles
     if opt.InConeID != '':
@@ -419,6 +421,9 @@ if hasattr(process.mix, 'input'):
                 s_template=s_template.replace('DUMMYOVERLAPPING',str(opt.overlapping))
                 s_template=s_template.replace('DUMMYRANDOMSHOOT',str(opt.randomShoot))
                 s_template=s_template.replace('DUMMYNRANDOMPARTICLES',str(opt.NRANDOMPART))
+
+            if opt.gunMode == 'gridpack':
+                s_template=s_template.replace('DUMMYGP',"'"+opt.gptarball+"'")
 
         elif (opt.DTIER == 'RECO' or opt.DTIER == 'NTUP'):
             # prepare RECO inputs

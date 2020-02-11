@@ -8,6 +8,7 @@ process.maxEvents.input = cms.untracked.int32(DUMMYEVTSPERJOB)
 process.RandomNumberGeneratorService.generator.initialSeed = cms.untracked.uint32(DUMMYSEED)
 process.RandomNumberGeneratorService.VtxSmeared.initialSeed = cms.untracked.uint32(DUMMYSEED)
 process.RandomNumberGeneratorService.mix.initialSeed = cms.untracked.uint32(DUMMYSEED)
+process.RandomNumberGeneratorService.externalLHEProducer.initialSeed = cms.untracked.uint32(DUMMYSEED)
 
 # Input source
 process.source.firstLuminosityBlock = cms.untracked.uint32(DUMMYSEED)
@@ -107,3 +108,72 @@ elif gunmode == 'physproc':
         filterPath = defineJetBasedBias(process, jetColl=jetColl, thr=thr, minObj=minObj)
         process.schedule.extend([filterPath])
         process.FEVTDEBUGHLToutput.SelectEvents.SelectEvents=cms.vstring(filterPath.label())
+
+
+elif gunmode == 'gridpack':
+    
+    process.generator = cms.EDFilter("Pythia8HadronizerFilter",
+        PythiaParameters = cms.PSet(
+            parameterSets = cms.vstring(
+                'pythia8CommonSettings',
+                'pythia8CUEP8M1Settings'
+            ),
+            pythia8CUEP8M1Settings = cms.vstring(
+                'Tune:pp 14',
+                'Tune:ee 7',
+                'MultipartonInteractions:pT0Ref=2.4024',
+                'MultipartonInteractions:ecmPow=0.25208',
+                'MultipartonInteractions:expPow=1.6'
+            ),
+            pythia8CommonSettings = cms.vstring(
+                'Tune:preferLHAPDF = 2',
+                'Main:timesAllowErrors = 10000',
+                'Check:epTolErr = 0.01',
+                'Beams:setProductionScalesFromLHEF = off',
+                'SLHA:keepSM = on',
+                'SLHA:minMassSM = 1000.',
+                'ParticleDecays:limitTau0 = on',
+                'ParticleDecays:tau0Max = 10',
+                'ParticleDecays:allowPhotonRadiation = on'
+            )
+        ),
+        comEnergy = cms.double(14000.0),
+        filterEfficiency = cms.untracked.double(1.0),
+        maxEventsToPrint = cms.untracked.int32(1),
+        pythiaHepMCVerbosity = cms.untracked.bool(False),
+        pythiaPylistVerbosity = cms.untracked.int32(1)
+    )
+
+
+    process.externalLHEProducer = cms.EDProducer("ExternalLHEProducer",
+    args = cms.vstring(DUMMYGP),
+    nEvents = cms.untracked.uint32(DUMMYEVTSPERJOB),
+    numberOfParameters = cms.uint32(1),
+    outputFile = cms.string('cmsgrid_final.lhe'),
+    scriptName = cms.FileInPath('GeneratorInterface/LHEInterface/data/run_generic_tarball_cvmfs.sh')
+    )
+
+    process.lhe_step = cms.Path(process.externalLHEProducer)
+
+    # Path and EndPath definitions
+    process.lhe_step = cms.Path(process.externalLHEProducer)
+    process.generation_step = cms.Path(process.pgen)
+    process.simulation_step = cms.Path(process.psim)
+    process.digitisation_step = cms.Path(process.pdigi_valid)
+    process.L1simulation_step = cms.Path(process.SimL1Emulator)
+    process.L1TrackTrigger_step = cms.Path(process.L1TrackTrigger)
+    process.digi2raw_step = cms.Path(process.DigiToRaw)
+    process.genfiltersummary_step = cms.EndPath(process.genFilterSummary)
+    process.endjob_step = cms.EndPath(process.endOfProcess)
+    process.FEVTDEBUGHLToutput_step = cms.EndPath(process.FEVTDEBUGHLToutput)
+
+    # Schedule definition
+    process.schedule = cms.Schedule(process.lhe_step,process.generation_step,process.genfiltersummary_step,process.simulation_step,process.digitisation_step,process.L1simulation_step,process.L1TrackTrigger_step,process.digi2raw_step)
+    process.schedule.extend(process.HLTSchedule)
+    process.schedule.extend([process.endjob_step,process.FEVTDEBUGHLToutput_step])
+    from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
+    associatePatAlgosToolsTask(process)
+    # filter all path with the production filter sequence
+    for path in process.paths:
+	    if path in ['lhe_step']: continue
+	    getattr(process,path).insert(0, process.ProductionFilterSequence)
